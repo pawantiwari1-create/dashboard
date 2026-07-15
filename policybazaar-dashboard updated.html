@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PolicyBazaar · Growth & Performance Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{
+    --navy:#0B1F4B; --blue:#0065FF; --blue-dark:#0047B3; --sky:#EAF1FF;
+    --gold:#F5B700; --green:#0FA36B; --red:#E2504C;
+    --paper:#F6F8FC; --card:#FFFFFF; --line:#E3E9F4;
+    --ink:#12203F; --muted:#5B6B8C;
+    --radius:14px; --shadow:0 1px 2px rgba(11,31,75,.06), 0 8px 24px rgba(11,31,75,.06);
+  }
+  *{box-sizing:border-box; margin:0; padding:0}
+  body{font-family:'Inter',system-ui,-apple-system,sans-serif; background:var(--paper); color:var(--ink); font-size:14px; -webkit-font-smoothing:antialiased}
+  h1,h2,h3,.num{font-family:'Archivo','Inter',sans-serif}
+  .num{font-variant-numeric:tabular-nums}
+
+  header{background:var(--navy); color:#fff; padding:20px 28px 0}
+  .hd-top{display:flex; align-items:center; gap:14px; flex-wrap:wrap}
+  .mark{width:44px;height:44px;border-radius:10px;background:var(--blue);display:grid;place-items:center;font-family:'Archivo';font-weight:800;font-size:17px;letter-spacing:.5px}
+  .hd-title h1{font-size:21px;font-weight:700;letter-spacing:.2px}
+  .hd-title p{font-size:12.5px;color:#A9BAE0;margin-top:2px}
+  .hd-right{margin-left:auto;text-align:right;font-size:12px;color:#A9BAE0}
+  .hd-right b{color:#fff;font-weight:600}
+  .live{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);padding:5px 10px;border-radius:99px;font-size:11.5px;margin-top:6px}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--green)}
+
+  .bar{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-top:14px;flex-wrap:wrap}
+  .tabs{display:flex;gap:2px}
+  .tab{background:transparent;border:none;color:#A9BAE0;font:600 13.5px 'Inter';padding:12px 16px;cursor:pointer;border-bottom:3px solid transparent}
+  .tab:hover{color:#fff}
+  .tab.on{color:#fff;border-bottom-color:var(--gold)}
+  .controls{display:flex;gap:8px;align-items:center;padding-bottom:10px;flex-wrap:wrap}
+  .rng{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#CBD8F5;font:600 12px 'Inter';padding:7px 13px;border-radius:99px;cursor:pointer}
+  .rng.on{background:var(--gold);border-color:var(--gold);color:var(--navy)}
+  .btn-print{background:transparent;border:1px solid rgba(255,255,255,.3);color:#fff;font:600 12px 'Inter';padding:7px 13px;border-radius:99px;cursor:pointer}
+  .btn-print:hover{background:rgba(255,255,255,.12)}
+  .chansel{display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:99px;padding:5px 8px 5px 13px}
+  .chansel label{font:600 11px 'Inter';letter-spacing:.6px;text-transform:uppercase;color:#A9BAE0}
+  .chansel select{background:var(--navy);color:#fff;border:none;font:600 12.5px 'Inter';padding:4px 6px;border-radius:8px;cursor:pointer;outline:none}
+
+  main{max-width:1240px;margin:0 auto;padding:22px 28px 48px}
+  .view{display:none}
+  .view.on{display:block}
+
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:14px}
+  .kpi{background:var(--card);border:1px solid var(--line);border-top:3px solid var(--blue);border-radius:var(--radius);padding:15px 16px 13px;box-shadow:var(--shadow)}
+  .kpi.alt{border-top-color:var(--gold)}
+  .kpi label{font-size:11px;font-weight:600;letter-spacing:.7px;text-transform:uppercase;color:var(--muted)}
+  .kpi .v{font-size:26px;font-weight:800;margin-top:5px;letter-spacing:-.3px}
+  .kpi .sub{font-size:11.5px;color:var(--muted);margin-top:3px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .chip{font:700 11px 'Inter';padding:2px 7px;border-radius:99px}
+  .chip.up{background:#E4F6EE;color:var(--green)}
+  .chip.dn{background:#FCEBEA;color:var(--red)}
+  .chip.na{background:#EEF2FA;color:var(--muted)}
+  .scope{display:inline-flex;align-items:center;gap:6px;background:var(--sky);color:var(--blue-dark);font:600 12px 'Inter';padding:6px 12px;border-radius:99px;margin-bottom:12px}
+
+  .grid{display:grid;gap:14px}
+  .g2{grid-template-columns:1.6fr 1fr}
+  .g2e{grid-template-columns:1fr 1fr}
+  @media(max-width:900px){.g2,.g2e{grid-template-columns:1fr}}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px 20px;margin-bottom:14px}
+  .panel h3{font-size:15px;font-weight:700}
+  .panel .cap{font-size:12px;color:var(--muted);margin:3px 0 14px}
+  .ch{position:relative;height:290px}
+  .ch.sm{height:250px}
+
+  .fbar{display:flex;align-items:center;gap:10px;margin:2px 0 12px;flex-wrap:wrap}
+  .fbar input{flex:1;min-width:200px;max-width:380px;border:1.5px solid var(--line);border-radius:99px;padding:8px 15px;font:500 13px 'Inter';color:var(--ink);outline:none;background:#FBFCFE}
+  .fbar input:focus{border-color:var(--blue)}
+  .fbar .tag{font:600 11px 'Inter';letter-spacing:.5px;text-transform:uppercase;color:var(--muted)}
+  .fsum{background:var(--sky);border-radius:10px;padding:9px 14px;font-size:12.5px;color:var(--blue-dark);margin-bottom:10px;display:none}
+  .fsum.on{display:block}
+  .fsum b{font-family:'Archivo'}
+
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{font:600 11px 'Inter';letter-spacing:.6px;text-transform:uppercase;color:var(--muted);text-align:left;padding:8px 10px;border-bottom:2px solid var(--line)}
+  th.r,td.r{text-align:right}
+  td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+  tr:last-child td{border-bottom:none}
+  tbody tr:hover{background:var(--sky)}
+  tr.sel td{background:#FFF7DE}
+  .pill{display:inline-block;background:var(--sky);color:var(--blue-dark);font:600 11px 'Inter';padding:3px 9px;border-radius:99px}
+  .sharebar{height:6px;border-radius:99px;background:#EDF1F8;overflow:hidden;min-width:90px}
+  .sharebar i{display:block;height:100%;background:var(--blue);border-radius:99px}
+  .qword{max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .empty{padding:18px;text-align:center;color:var(--muted);font-size:13px}
+
+  .ins{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+  .in{background:linear-gradient(180deg,#FFFFFF,#FAFBFE);border:1px solid var(--line);border-left:4px solid var(--gold);border-radius:12px;padding:13px 15px;font-size:13px;line-height:1.55}
+  .in b{color:var(--navy)}
+  .note{font-size:11.5px;color:var(--muted);margin-top:10px;line-height:1.5}
+
+  footer{max-width:1240px;margin:0 auto;padding:0 28px 30px;font-size:11.5px;color:var(--muted);line-height:1.6}
+  @media print{
+    header{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .controls,.btn-print,.tabs,.fbar{display:none}
+    .view{display:block!important;page-break-inside:avoid}
+    body{background:#fff}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hd-top">
+    <div class="mark">PB</div>
+    <div class="hd-title">
+      <h1>PolicyBazaar · Growth &amp; Performance Dashboard</h1>
+      <p>GA4 property 151454888 &nbsp;·&nbsp; Search Console: www.policybazaar.com</p>
+    </div>
+    <div class="hd-right">
+      <div>Reporting window: <b id="winLabel">–</b></div>
+      <div class="live"><span class="dot"></span> Data refreshed 15 Jul 2026 · IST</div>
+    </div>
+  </div>
+  <div class="bar">
+    <nav class="tabs">
+      <button class="tab on" data-view="overview">Overview</button>
+      <button class="tab" data-view="acq">Acquisition</button>
+      <button class="tab" data-view="seo">Organic Search</button>
+      <button class="tab" data-view="pages">Top Pages</button>
+      <button class="tab" data-view="health">Site Health &amp; Authority</button>
+    </nav>
+    <div class="controls">
+      <div class="chansel">
+        <label>Channel</label>
+        <select id="chanSel"><option value="ALL">All channels</option></select>
+      </div>
+      <button class="rng on" data-d="28">28D</button>
+      <button class="rng" data-d="7">7D</button>
+      <button class="rng" data-d="60">60D</button>
+      <button class="rng" data-d="90">90D</button>
+      <button class="btn-print" onclick="window.print()">Export PDF</button>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <!-- ================= OVERVIEW ================= -->
+  <section class="view on" id="v-overview">
+    <div id="scopeStrip"></div>
+    <div class="kpis" id="kpiRow"></div>
+
+    <div class="grid g2">
+      <div class="panel">
+        <h3>Traffic trend — all channels</h3>
+        <p class="cap">Daily sessions and users, GA4 · selected window · per-channel daily trend arrives with the next data refresh</p>
+        <div class="ch"><canvas id="cTraffic"></canvas></div>
+      </div>
+      <div class="panel">
+        <h3>Key events — all channels</h3>
+        <p class="cap">Daily key events (conversions), GA4</p>
+        <div class="ch"><canvas id="cKey"></canvas></div>
+      </div>
+    </div>
+
+    <div class="grid g2e">
+      <div class="panel">
+        <h3>Device split</h3>
+        <p class="cap">Sessions by device · last 30 days</p>
+        <div class="ch sm"><canvas id="cDevice"></canvas></div>
+      </div>
+      <div class="panel">
+        <h3>Sessions by default channel group</h3>
+        <p class="cap">Last 30 days · selected channel highlighted in gold</p>
+        <div class="ch sm"><canvas id="cChanMini"></canvas></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>Highlights for the review</h3>
+      <p class="cap">Auto-generated from the selected window</p>
+      <div class="ins" id="insights"></div>
+    </div>
+  </section>
+
+  <!-- ================= ACQUISITION ================= -->
+  <section class="view" id="v-acq">
+    <div class="panel">
+      <h3>Channel performance — last 30 days</h3>
+      <p class="cap">Sessions, users, engagement and key events by default channel group (GA4) · use the Channel dropdown above to spotlight one</p>
+      <table id="tChan"></table>
+      <p class="note">“Unassigned” and “(other)” largely reflect app / measurement-protocol traffic and rows grouped by GA4 cardinality limits — worth flagging as a tagging-hygiene follow-up in the review.</p>
+    </div>
+    <div class="grid g2e">
+      <div class="panel">
+        <h3>Sessions vs key events by channel</h3>
+        <p class="cap">Last 30 days</p>
+        <div class="ch"><canvas id="cChan"></canvas></div>
+      </div>
+      <div class="panel">
+        <h3>Engagement rate by channel</h3>
+        <p class="cap">Engaged sessions ÷ sessions · last 30 days</p>
+        <div class="ch"><canvas id="cEng"></canvas></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= SEO ================= -->
+  <section class="view" id="v-seo">
+    <div class="kpis" id="kpiSeo"></div>
+    <div class="grid g2e">
+      <div class="panel">
+        <h3>Organic clicks &amp; impressions</h3>
+        <p class="cap">Google Search Console · selected window</p>
+        <div class="ch"><canvas id="cGsc"></canvas></div>
+      </div>
+      <div class="panel">
+        <h3>Average CTR</h3>
+        <p class="cap">Daily clicks ÷ impressions · selected window</p>
+        <div class="ch"><canvas id="cCtr"></canvas></div>
+      </div>
+    </div>
+    <div class="grid g2e">
+      <div class="panel">
+        <h3>Average position</h3>
+        <p class="cap">Lower is better · axis inverted · selected window</p>
+        <div class="ch"><canvas id="cPos"></canvas></div>
+      </div>
+      <div class="panel">
+        <h3>Search performance by device</h3>
+        <p class="cap">Clicks share · 14 Jun – 13 Jul 2026 (GSC)</p>
+        <div class="ch"><canvas id="cGscDevice"></canvas></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>Top search queries</h3>
+      <p class="cap">Clicks · 14 Jun – 13 Jul 2026 · top queries pulled from GSC</p>
+      <div class="fbar">
+        <span class="tag">Query contains</span>
+        <input id="qFilter" type="text" placeholder="e.g. gold, challan, insurance…">
+      </div>
+      <div class="fsum" id="qSum"></div>
+      <table id="tQueries"></table>
+    </div>
+
+    <div class="panel">
+      <h3>Top landing pages (organic)</h3>
+      <p class="cap">Clicks · 14 Jun – 13 Jul 2026 · top pages pulled from GSC</p>
+      <div class="fbar">
+        <span class="tag">URL contains</span>
+        <input id="gpFilter" type="text" placeholder="e.g. gold-rate, rto, motor-insurance…">
+      </div>
+      <div class="fsum" id="gpSum"></div>
+      <table id="tGscPages"></table>
+    </div>
+  </section>
+
+  <!-- ================= PAGES ================= -->
+  <section class="view" id="v-pages">
+    <div class="panel">
+      <h3>GA4 — most-viewed pages · last 30 days</h3>
+      <p class="cap">Page views, sessions and users by page path</p>
+      <div class="fbar">
+        <span class="tag">URL contains</span>
+        <input id="pgFilter" type="text" placeholder="e.g. quotes, checkout, secure…">
+      </div>
+      <div class="fsum" id="pgSum"></div>
+      <table id="tPages"></table>
+      <p class="note">“(not set)” rows are app screens / events without a page path; “(other)” is GA4’s long-tail rollup. Quote and checkout journeys dominate on-site views — a good funnel story for the review.</p>
+    </div>
+    <div class="panel">
+      <h3>GSC — top organic landing pages · 14 Jun – 13 Jul 2026</h3>
+      <p class="cap">Same URL filter behaviour as Search Console</p>
+      <div class="fbar">
+        <span class="tag">URL contains</span>
+        <input id="gp2Filter" type="text" placeholder="e.g. gold-rate, rto…">
+      </div>
+      <div class="fsum" id="gp2Sum"></div>
+      <table id="tGscPages2"></table>
+    </div>
+  </section>
+
+  <!-- ================= SITE HEALTH & AUTHORITY ================= -->
+  <section class="view" id="v-health">
+    <div class="kpis" id="kpiHealth"></div>
+
+    <div class="grid g2e">
+      <div class="panel">
+        <h3>Core Web Vitals — mobile</h3>
+        <p class="cap">Google PageSpeed Insights · key journey pages</p>
+        <table id="tPsiMobile"></table>
+      </div>
+      <div class="panel">
+        <h3>Lighthouse scores — mobile</h3>
+        <p class="cap">Performance / Accessibility / Best Practices / SEO, out of 100</p>
+        <div class="ch sm"><canvas id="cPsiScores"></canvas></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>Homepage: mobile vs desktop</h3>
+      <p class="cap">Same URL, different device strategy — the performance gap is the story</p>
+      <table id="tPsiHome"></table>
+      <p class="note">Mobile performance trails desktop by a wide margin on the homepage (LCP 5.3s mobile vs 0.9s desktop) — this is one of the biggest technical levers available, given roughly 85% of sessions are on mobile.</p>
+    </div>
+
+    <div class="panel">
+      <h3>Backlink profile &amp; authority — Ahrefs</h3>
+      <p class="cap">Domain-level authority signals for policybazaar.com</p>
+      <table id="tAhrefs"></table>
+      <p class="note">Domain Rating of 74 sits in a strong authority band for an Indian BFSI/insurance-aggregator site — a solid foundation supporting the organic-search performance shown in the Organic Search tab.</p>
+    </div>
+
+    <div class="panel">
+      <h3>Competitive &amp; keyword intelligence — Semrush</h3>
+      <p class="cap">Not available in this refresh</p>
+      <div class="empty" style="text-align:left;padding:14px 4px;line-height:1.6">
+        The Semrush connector returned an authorization error (HTTP 403) on every endpoint tried — domain overview, backlinks overview, and keyword overview — despite API units being available on the account. That points to a permissions/plan issue on the connected Semrush account rather than a missing-data problem; reconnecting or re-authorizing it in your MCP settings should resolve it. Once it's live, this panel is ready to extend with: organic competitor domains, paid-search competitors, keyword-gap analysis, and a Semrush-vs-Ahrefs authority cross-check.
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  Sources: Google Analytics 4 (property “PolicyBazaar – Ga4”, IST timezone, default channel group), Google Search Console (www.policybazaar.com), Ahrefs (domain-level authority and backlinks for policybazaar.com), and Google PageSpeed Insights (Lighthouse scores and Core Web Vitals for five key pages, mobile + desktop). Daily series cover 16 Apr – 14 Jul 2026 (GA4) and 16 Apr – 13 Jul 2026 (GSC). Query/page tables cover the listed rows pulled from each API; “contains” filters aggregate across the loaded rows (position is clicks-weighted). Change chips compare the selected window with the preceding window of equal length where history allows. Semrush could not be included in this refresh — see the note in Site Health &amp; Authority. To refresh: ask Claude to “update the PolicyBazaar dashboard with the latest data”.
+</footer>
+
+<script>
+/* ================= DATA (pulled live 13 Jul 2026) ================= */
+const GA_START = new Date('2026-04-16T00:00:00');
+const GA = [
+[1562326,2061896,611476,1095091,427,1738186],[1546442,2274989,576908,1105213,425,1669330],[1501452,2148951,589953,1073313,449,1646638],[1397379,2146399,558367,974820,449,1528776],[1522683,1636444,579550,1075553,437,1646570],[1546812,2014377,603894,1061566,432,1674240],[1549453,2117321,599431,1096212,436,1666891],[1439626,1927763,580943,1023534,466,1611800],[1419989,2136864,552387,1000311,449,1567441],[1304207,2029472,509391,909065,476,1465775],[1234977,2004704,506179,883178,471,1389667],[1455328,1620831,559811,1024281,434,1601764],[1446955,1957337,549525,1000670,436,1580557],[1404225,2012179,550953,956662,434,1542779],[1447848,1967261,557529,997852,437,1603690],[1476349,2233751,626068,1036899,430,1681139],[1542391,2192101,648826,1084818,433,1718217],[1484824,2203502,640067,1066350,436,1643462],[1460983,1704065,620599,1020487,433,1671994],[1584114,2060172,656142,1162016,434,1779301],[1555872,2193992,627768,1133448,438,1758258],[1714576,2137110,701724,1164004,397,1875932],[2460765,3086445,1224789,1402102,309,2632225],[2374214,2904907,1146816,1376191,343,2553305],[1465153,2215253,633421,1011779,468,1678582],[1713776,1887829,710197,1227784,442,1908783],[1652214,2160180,651446,1160639,468,1842036],[1767136,2302359,697064,1216012,439,1908425],[1745211,2202101,696013,1183233,444,1901259],[1643380,2356008,674809,1161384,468,1859857],[1597562,2241705,654967,1140795,489,1810163],[1522891,2242489,650647,1064792,489,1733670],[1702184,1897313,686745,1183224,467,1886748],[1607366,2084885,637987,1131476,508,1808708],[1547942,2231072,618105,1105726,539,1733553],[1536196,2078946,597286,1098450,532,1739393],[1477841,2172199,578206,1053419,544,1677579],[1453224,2173041,589007,1050544,569,1682763],[1358283,2128863,565904,946278,574,1550931],[1582833,1801519,616357,1131402,529,1749801],[1532598,2100626,600942,1098250,547,1734756],[1532742,2092449,572497,1108414,523,1695687],[1430915,2055595,549827,1036511,569,1599423],[1511419,2256535,577465,1081488,514,1704780],[1494873,2191102,586646,1074990,543,1708702],[1386389,2197552,567338,998017,569,1630629],[1661779,1811849,642583,1186034,510,1846083],[1694518,2173665,701221,1207355,500,1944882],[1750624,2290373,704661,1211252,494,1940323],[1774231,2274531,717656,1277988,515,1982948],[1688071,2349451,706250,1210257,541,1941511],[1697624,2361988,737139,1202870,547,1899293],[1574861,2303190,688084,1108758,556,1842819],[1710908,1921620,691309,1229328,512,1953916],[1729070,2251558,715638,1252280,500,1954628],[1703784,2383334,693044,1202166,418,1972281],[1806137,2365721,727491,1270760,444,2006144],[1693557,2466963,690213,1193799,474,1945687],[1725867,2355859,675552,1228667,460,1879010],[1665199,2405993,708718,1118222,470,1799720],[1782452,1916451,673550,1265003,455,1898858],[1776691,2344669,690643,1263460,478,2009451],[1687974,2276972,685543,1200163,458,1863356],[1720601,2319374,684820,1211850,406,1973425],[1673725,2393255,623189,1130385,437,1825023],[1707082,2314873,661039,1182499,456,1906252],[1497367,2252992,613032,1021891,475,1731573],[1719527,1915095,684977,1225043,458,1967080],[1782726,2264191,699456,1220963,425,1984575],[1740459,2372894,688954,1204486,439,1944203],[1777394,2349965,706547,1210918,436,1983494],[1699977,2457056,684890,1216689,443,1906986],[1621034,2286662,662809,1132237,461,1835516],[1501011,2358253,614025,1049384,477,1725997],[1693351,1943803,687418,1200053,454,1922502],[1781702,2250340,698104,1264900,443,1984596],[1838131,2495317,766866,1287858,421,2076882],[1930629,2511669,848039,1357531,416,2109377],[1864267,2589735,818984,1286914,419,2014538],[1696842,2336060,724778,1200551,452,1814845],[1549538,2362534,688198,1109616,475,1724435],[1764578,1938748,742967,1259136,431,1996660],[1848057,2344084,790686,1291829,409,2076604],[1991048,2640728,877569,1364300,383,2177089],[1860379,2447933,797330,1275562,421,2033547],[1945453,2617872,809003,1320171,395,1999590],[1918437,2640021,903212,1304075,408,2087799],[1860442,2702041,904726,1240059,407,2062762],[1964582,2160730,894953,1319829,408,2091758],[1959030,2466104,886079,1355616,402,2064219]
+];
+const GSC_START = new Date('2026-04-16T00:00:00');
+const GSC = [
+[171722,12033729,5.79],[179311,12712256,5.76],[183840,12515925,5.66],[187369,13221687,5.70],[197729,13192675,6.05],[187572,12378066,6.06],[183095,11730816,6.17],[189613,11519346,6.16],[179383,11157016,6.27],[151255,9624354,6.19],[149912,9681498,6.25],[173868,10956715,6.46],[182311,11616028,6.35],[188525,12331766,6.20],[186454,12005241,6.20],[169449,11424532,6.10],[154677,10593353,6.09],[147194,10331284,6.06],[176121,11997962,6.15],[182843,12381603,6.13],[177229,12169121,6.18],[169604,11876533,6.13],[168854,11167759,6.13],[156400,9769080,6.08],[166067,10801750,6.19],[226723,15572110,6.25],[255540,16605220,6.21],[312960,20188361,6.22],[260380,16805073,6.17],[243555,15485626,6.14],[209527,12962144,6.12],[197658,12702872,6.26],[218560,13963528,6.18],[201297,13153015,6.18],[202598,13163579,6.14],[194294,12352329,6.10],[157477,10993065,6.42],[141803,9544039,6.49],[140793,9565712,6.31],[164624,11109700,6.40],[151372,10691684,6.47],[151726,10379325,6.61],[158027,10393550,6.52],[153717,10421131,6.70],[140849,9154867,6.46],[136943,9115659,6.65],[162829,10886630,6.65],[163711,10609809,6.45],[158880,10916175,6.53],[143431,10513768,6.66],[150836,10631690,6.66],[158079,10427380,6.68],[160515,10414338,6.57],[191797,12645615,6.63],[181544,12268582,6.45],[244684,15046467,6.47],[283932,16055896,6.38],[255038,14119316,6.36],[194297,10982925,6.24],[195988,10968004,6.44],[203599,12565953,6.45],[165276,11479850,6.75],[155374,11195583,6.89],[166782,11883929,7.00],[179758,12972322,6.79],[157587,11156204,6.70],[154514,10669713,6.72],[175591,11657496,6.69],[171299,11794133,6.86],[177247,12544923,6.71],[183347,13290338,6.76],[168006,12079510,6.77],[153199,11051167,6.52],[149220,11052178,6.60],[170530,12463366,6.71],[176035,13019043,6.85],[172610,12866208,6.77],[165081,12007174,6.64],[154671,11547463,6.59],[138588,9806632,6.60],[143476,9760199,6.42],[156440,11170994,6.54],[158577,11092845,6.50],[166223,11656908,6.64],[161402,11027414,6.58],[153188,10443779,6.60],[131193,9149390,6.64],[130858,9416505,6.81],[154500,11135302,6.79]
+];
+const CHAN = [
+["Unassigned",12550609,12081444,9402694,15301581],
+["Cross-network",12023725,5703965,7373458,12108338],
+["Direct",11545258,6697146,8350819,11524896],
+["(other)",11175012,7662308,8266674,2139988],
+["Organic Search",5196360,3523439,3870299,5744811],
+["Paid Search",3466761,2142055,2978459,3740834],
+["Display",3317379,3043213,1629017,3649088],
+["Referral",2598055,1867519,1986310,2610341],
+["Affiliates",647777,519130,337109,673618],
+["Paid Video",480736,456732,134465,478671],
+["Paid Other",251243,146166,174394,246688],
+["Email",206821,126215,176282,200626]
+];
+const DEV = [["Mobile",48801368],["App / Other",11175012],["Desktop",5146560],["Tablet",107150]];
+const PAGES = [
+["/",27025435,15981045,12272560],
+["/quotes",10658961,2481770,1875663],
+["/quotesV2",9809304,6995562,5557465],
+["/expcheckout",8576316,5894824,5006936],
+["/product-detail",7376907,1126917,727980],
+["/v2/quotes",5716015,3516269,2605330],
+["/pgv/Leads/AgentScreen.aspx",4464528,800729,149486],
+["/quote",3451333,1664262,1174653],
+["/secure",3422020,2167397,1619145],
+["/v2/proposal",2017146,1009084,758806]
+];
+// GSC by device: [device, clicks, impressions, ctr%, position] · 14 Jun - 13 Jul 2026
+const GSC_DEVICE = [
+["Mobile",4253641,272495917,1.56,6.62],
+["Desktop",619107,69375913,0.89,6.94],
+["Tablet",17411,1052695,1.65,6.76]
+];
+// Ahrefs domain authority + backlinks
+const AHREFS = {
+  domainRating: 74,
+  ahrefsRank: 45552,
+  liveBacklinks: 85845,
+  allTimeBacklinks: 16271949,
+  liveRefDomains: 7720,
+  allTimeRefDomains: 35414
+};
+// PageSpeed Insights: [page, strategy, perf, access, bestPractices, seo, lcp, cls, fcp, speedIndex, tbt]
+const PSI = [
+  ["Homepage","mobile",68,70,92,85,"5.3 s","0.085","3.3 s","5.6 s","50 ms"],
+  ["Homepage","desktop",98,68,92,85,"0.9 s","0.002","0.7 s","1.1 s","0 ms"],
+  ["Term Insurance","mobile",83,93,96,75,"3.3 s","0.112","2.9 s","3.3 s","40 ms"],
+  ["Health Insurance","mobile",87,73,96,92,"3.2 s","0.084","2.3 s","4.1 s","10 ms"],
+  ["Car Insurance","mobile",80,64,96,100,"3.0 s","0.084","2.0 s","4.2 s","390 ms"]
+];
+const QUERIES = [
+["gold rate today",736126,70411064,7.1],["today gold rate",112807,6441002,6.7],["gold price today",81800,7984081,7.5],
+["policybazaar",74846,926521,1.0],["policy bazaar",74432,921792,1.0],["parivahan sewa",32612,4098452,4.1],
+["parivahan",30485,5782022,4.7],["vehicle details",29232,208512,3.9],["silver rate today",26083,3649133,6.6],
+["gold rate",21250,1277652,6.9],["challan check",20728,714062,6.9],["silver price today",18061,1964680,6.9],
+["e challan",16947,2675907,6.9],["elabharthi",15555,1030619,7.9],["today gold price",15516,1007899,7.1],
+["gold rate today jammu",14258,85408,2.4],["vehicle owner details",13994,50899,2.5],["policybazaar login",13532,21352,1.0],
+["ulip calculator",11657,21271,4.3],["gold price",10281,1079096,8.2],["vehicle owner details online",9763,40996,2.5],
+["policy bazar",9726,108894,1.0],["gold rate today delhi",9600,714050,5.7],["rto",9109,239580,5.1],
+["m parivahan",8432,605019,5.4],["bike number check",8286,29193,2.6],["car insurance",7835,145470,6.4],
+["elabharthi payment status",7798,228218,6.9],["puc certificate",7745,228006,4.3],["health insurance",7357,1275573,3.2],
+["bike insurance",7167,119192,2.4],["e challan check",6983,389214,6.7],["echallan",6735,1387674,7.1],
+["car owner details",6152,28523,3.2],["today silver rate",5884,753332,6.4],["rc download",5801,373314,6.9],
+["gold rate today bangalore",5762,954485,7.5],["vehicle information",5748,123210,5.6],["bike owner details",5626,14760,2.3],
+["health insurance plans",5376,83629,3.1],["vehicle insurance status check online",5313,22100,2.2],["rc status",5129,199922,5.2],
+["gold rate today 22 carat",5089,352622,5.5],["vehicle owner details by number plate",4931,28625,3.5],["today gold rate bangalore",4829,376526,4.9],
+["parivahan sewa portal",4706,382840,3.7],["todays gold rate",4677,382471,6.9],["insurance check",4630,37411,2.3],
+["number plate check",4518,45193,3.8],["check challan",4457,155956,6.6],["vehicle number check",4305,24650,2.9],
+["vahan parivahan",4211,429256,5.2],["sspmis",4208,224349,6.8],["rto vehicle information",4156,78217,5.4],
+["policybazar",4150,39242,1.0],["gold rate today 1 gram",4099,166882,4.1],["check vehicle details",4068,29005,4.2],
+["vehicle details by number",4048,21567,3.3],["gold price today jammu",4039,28358,2.6],["online challan check",3996,140285,7.2]
+];
+const GSCPAGES = [
+["/",188908,3616033,2.2],["/gold-rate/tamil-nadu/",177126,5622227,5.7],["/gold-rate/uttar-pradesh/",154235,10436264,5.5],
+["/gold-rate/delhi/",142344,12618870,6.0],["/rto/vehicle-owner-details/",113901,1375254,4.9],["/rto/parivahan-sewa/",110622,14956280,4.6],
+["/gold-rate/bangalore/",58407,12233450,7.8],["/gold-rate/jammu/",52341,893826,4.5],
+["/motor-insurance/car-insurance/check-car-insurance-status-online/",46676,562233,4.1],["/rto/challan-status/",45040,4018234,7.1],
+["/rto/rc-status/",41258,902273,5.4],["/rto/puc-certificate/",40633,1422558,4.9],["/rto/vehicle-owner-details/maharashtra/",40423,440016,4.9],
+["/motor-insurance/car-insurance/",40134,4169685,1.8],["/gold-rate/karnataka/",39315,3985049,7.2],
+["/motor-insurance/two-wheeler-insurance/",38090,2772102,1.6],["/rto/vehicle-owner-details/uttar-pradesh/",37888,426617,5.0],
+["/gold-rate/punjab/",37277,3336851,7.1],["/life-insurance/pension-plans/articles/elabharthi/",33488,1876075,7.7],
+["/gold-rate/chennai/",29175,6478493,7.7],["/gold-rate/lucknow/",29060,2598224,5.3],
+["/health-insurance/health-insurance-india/",28245,3879658,2.7],["/rto/vehicle-owner-details/west-bengal/",28162,253540,4.9],
+["/rto/vehicle-owner-details/madhya-pradesh/",28101,468757,6.0],["/rto/challan-status/andhra-pradesh/",27590,537726,5.1],
+["/gold-rate/mumbai/",27475,5525357,8.0],["/rto/challan-status/uttar-pradesh/",27160,1365976,7.0],
+["/rto/vehicle-owner-details/kerala/",26501,304807,4.9],["/rto/challan-status/kerala/",26238,1376495,5.9],
+["/rto/vehicle-owner-details/tamil-nadu/",26187,242370,5.1]
+];
+
+/* ================= helpers ================= */
+const $ = s => document.querySelector(s);
+function fmt(n){
+  if(n>=1e7) return (n/1e7).toFixed(2).replace(/\.?0+$/,'')+' Cr';
+  if(n>=1e5) return (n/1e5).toFixed(2).replace(/\.?0+$/,'')+' L';
+  if(n>=1e3) return (n/1e3).toFixed(1).replace(/\.0$/,'')+'K';
+  return String(Math.round(n));
+}
+function full(n){ return Math.round(n).toLocaleString('en-IN'); }
+function pct(n,d=1){ return n.toFixed(d)+'%'; }
+function dLabel(dt){ return dt.toLocaleDateString('en-IN',{day:'numeric',month:'short'}); }
+function dates(start,len){ const a=[]; for(let i=0;i<len;i++){const d=new Date(start); d.setDate(d.getDate()+i); a.push(d);} return a; }
+const GA_DATES = dates(GA_START,GA.length), GSC_DATES = dates(GSC_START,GSC.length);
+function slice(arr,n){ return arr.slice(Math.max(0,arr.length-n)); }
+function prev(arr,n){ const e=arr.length-n; return e-n>=0 ? arr.slice(e-n,e) : null; }
+function sum(rows,i){ return rows.reduce((s,r)=>s+r[i],0); }
+function delta(cur,prv){ if(prv==null||prv===0) return null; return (cur-prv)/prv*100; }
+function chip(d){
+  if(d===null) return '<span class="chip na">no prior window</span>';
+  const cls = d>=0 ? 'up':'dn', sign = d>=0?'▲':'▼';
+  return `<span class="chip ${cls}">${sign} ${Math.abs(d).toFixed(1)}%</span>`;
+}
+function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+
+Chart.defaults.font.family = "'Inter',sans-serif";
+Chart.defaults.color = '#5B6B8C';
+Chart.defaults.borderColor = '#E9EEF7';
+const BLUE='#0065FF', NAVY='#0B1F4B', GOLD='#F5B700', GREEN='#0FA36B', SKY='#9DBEFF';
+let charts = {};
+function mkChart(id,cfg){ if(charts[id]) charts[id].destroy(); charts[id]=new Chart($('#'+id),cfg); }
+
+/* ================= state ================= */
+let RANGE = 28;
+let CHANNEL = 'ALL';
+
+/* channel dropdown options */
+CHAN.forEach(c=>{
+  const o=document.createElement('option'); o.value=c[0]; o.textContent=c[0];
+  $('#chanSel').appendChild(o);
+});
+
+function kpiCard(label,val,sub,alt){ return `<div class="kpi${alt?' alt':''}"><label>${label}</label><div class="v num">${val}</div><div class="sub">${sub}</div></div>`; }
+
+/* ================= KPIs (channel-aware) ================= */
+function renderKpis(){
+  const a=GA_DATES[GA_DATES.length-RANGE]||GA_DATES[0], b=GA_DATES[GA_DATES.length-1];
+  $('#winLabel').textContent = dLabel(a)+' – '+dLabel(b)+' 2026 ('+RANGE+' days)';
+
+  if(CHANNEL==='ALL'){
+    $('#scopeStrip').innerHTML='';
+    const ga=slice(GA,RANGE), gaP=prev(GA,RANGE);
+    const gs=slice(GSC,RANGE), gsP=prev(GSC,RANGE);
+    const sess=sum(ga,0), users=sum(ga,1), nu=sum(ga,2), engaged=sum(ga,3), ke=sum(ga,5);
+    const er=engaged/sess*100;
+    const clicks=sum(gs,0);
+    const dSess=delta(sess,gaP?sum(gaP,0):null), dUsers=delta(users,gaP?sum(gaP,1):null),
+          dNu=delta(nu,gaP?sum(gaP,2):null), dKe=delta(ke,gaP?sum(gaP,5):null),
+          dEr=gaP?er-(sum(gaP,3)/sum(gaP,0)*100):null,
+          dCl=delta(clicks,gsP?sum(gsP,0):null);
+    $('#kpiRow').innerHTML =
+      kpiCard('Sessions',fmt(sess),chip(dSess)+' vs prev '+RANGE+'d')+
+      kpiCard('Users',fmt(users),chip(dUsers)+' vs prev '+RANGE+'d')+
+      kpiCard('New users',fmt(nu),chip(dNu)+' vs prev '+RANGE+'d')+
+      kpiCard('Engagement rate',pct(er),(dEr===null?'<span class="chip na">no prior window</span>':`<span class="chip ${dEr>=0?'up':'dn'}">${dEr>=0?'▲':'▼'} ${Math.abs(dEr).toFixed(1)} pts</span>`)+' vs prev')+
+      kpiCard('Key events',fmt(ke),chip(dKe)+' vs prev '+RANGE+'d')+
+      kpiCard('Organic clicks',fmt(clicks),chip(dCl)+' vs prev '+RANGE+'d',true);
+  } else {
+    const c=CHAN.find(x=>x[0]===CHANNEL);
+    const tot=CHAN.reduce((s,x)=>s+x[1],0);
+    const share=c[1]/tot*100, er=c[3]/c[1]*100, keps=c[4]/c[1];
+    $('#scopeStrip').innerHTML=`<div class="scope">Channel view: <b>&nbsp;${esc(CHANNEL)}</b>&nbsp;· default channel group · fixed 30-day window (14 Jun – 13 Jul)</div>`;
+    $('#kpiRow').innerHTML =
+      kpiCard('Sessions',fmt(c[1]),`<span class="chip na">${share.toFixed(1)}% of all web sessions</span>`)+
+      kpiCard('Users',fmt(c[2]),'last 30 days')+
+      kpiCard('Engaged sessions',fmt(c[3]),'last 30 days')+
+      kpiCard('Engagement rate',pct(er),er>=65?'<span class="chip up">above site avg</span>':'<span class="chip na">last 30 days</span>')+
+      kpiCard('Key events',fmt(c[4]),'last 30 days')+
+      kpiCard('Key events / session',keps.toFixed(2),'conversion intensity',true);
+  }
+}
+
+/* ================= overview charts ================= */
+function renderTraffic(){
+  const ga=slice(GA,RANGE), dts=slice(GA_DATES,RANGE).map(dLabel);
+  mkChart('cTraffic',{type:'line',data:{labels:dts,datasets:[
+    {label:'Sessions',data:ga.map(r=>r[0]),borderColor:BLUE,backgroundColor:'rgba(0,101,255,.10)',fill:true,tension:.35,pointRadius:0,borderWidth:2.5},
+    {label:'Users',data:ga.map(r=>r[1]),borderColor:NAVY,tension:.35,pointRadius:0,borderWidth:2,borderDash:[5,4]}
+  ]},options:{maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+    plugins:{legend:{position:'top',align:'end',labels:{boxWidth:10,boxHeight:10,usePointStyle:true}},
+    tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${full(c.parsed.y)}`}}},
+    scales:{y:{ticks:{callback:v=>fmt(v)}},x:{ticks:{maxTicksLimit:10}}}}});
+  mkChart('cKey',{type:'line',data:{labels:dts,datasets:[
+    {label:'Key events',data:ga.map(r=>r[5]),borderColor:GOLD,backgroundColor:'rgba(245,183,0,.15)',fill:true,tension:.35,pointRadius:0,borderWidth:2.5}
+  ]},options:{maintainAspectRatio:false,plugins:{legend:{display:false},
+    tooltip:{callbacks:{label:c=>` ${full(c.parsed.y)} key events`}}},
+    scales:{y:{ticks:{callback:v=>fmt(v)}},x:{ticks:{maxTicksLimit:10}}}}});
+}
+
+function renderDeviceChan(){
+  mkChart('cDevice',{type:'doughnut',data:{labels:DEV.map(d=>d[0]),datasets:[{data:DEV.map(d=>d[1]),
+    backgroundColor:[BLUE,'#7FA8FF',NAVY,GOLD],borderWidth:2,borderColor:'#fff'}]},
+    options:{maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'right',labels:{boxWidth:12,usePointStyle:true}},
+    tooltip:{callbacks:{label:c=>` ${c.label}: ${fmt(c.parsed)} (${(c.parsed/DEV.reduce((s,d)=>s+d[1],0)*100).toFixed(1)}%)`}}}}});
+  const top8=CHAN.slice(0,8);
+  mkChart('cChanMini',{type:'bar',data:{labels:top8.map(c=>c[0]),datasets:[{data:top8.map(c=>c[1]),
+    backgroundColor:top8.map(c=>c[0]===CHANNEL?GOLD:BLUE),borderRadius:6}]},
+    options:{indexAxis:'y',maintainAspectRatio:false,plugins:{legend:{display:false},
+    tooltip:{callbacks:{label:c=>` ${fmt(c.parsed.x)} sessions`}}},scales:{x:{ticks:{callback:v=>fmt(v)}}}}});
+}
+
+function renderInsights(){
+  const ga=slice(GA,RANGE), dts=slice(GA_DATES,RANGE);
+  let pk=0; ga.forEach((r,i)=>{if(r[0]>ga[pk][0])pk=i;});
+  const gs=slice(GSC,RANGE);
+  const totSess=CHAN.reduce((s,c)=>s+c[1],0);
+  const orgShare=(CHAN.find(c=>c[0]==='Organic Search')[1]/totSess*100).toFixed(1);
+  const mobShare=(DEV[0][1]/DEV.reduce((s,d)=>s+d[1],0)*100).toFixed(1);
+  const posNow=gs.slice(-7).reduce((s,r)=>s+r[2],0)/7, posThen=gs.slice(0,7).reduce((s,r)=>s+r[2],0)/7;
+  const ctr=(sum(gs,0)/sum(gs,1)*100).toFixed(2);
+  $('#insights').innerHTML = `
+    <div class="in"><b>Peak day:</b> ${dLabel(dts[pk])} delivered <b>${fmt(ga[pk][0])}</b> sessions and <b>${fmt(ga[pk][5])}</b> key events — the strongest day of the window.</div>
+    <div class="in"><b>Mobile-first:</b> ${mobShare}% of web sessions are mobile — every funnel and landing-page decision should be judged on mobile UX first.</div>
+    <div class="in"><b>Organic engine:</b> Organic Search drove <b>${fmt(CHAN[4][1])}</b> sessions (${orgShare}% of tracked web sessions) with site-wide CTR of ${ctr}% on ${fmt(sum(gs,1))} impressions.</div>
+    <div class="in"><b>Rank watch:</b> Average Google position moved from ${posThen.toFixed(1)} to ${posNow.toFixed(1)} across the window ${posNow>posThen?'— a slight slip worth a content-refresh sprint on the biggest gold-rate and RTO pages.':'— holding steady.'}</div>
+    <div class="in"><b>Content flywheel:</b> Gold-rate and RTO/Parivahan pages are the top organic entry points — non-insurance content is feeding the insurance funnel at scale.</div>`;
+}
+
+/* ================= acquisition ================= */
+function renderAcq(){
+  const tot=CHAN.reduce((s,c)=>s+c[1],0);
+  $('#tChan').innerHTML = `<thead><tr><th>Channel</th><th class="r">Sessions</th><th>Share</th><th class="r">Users</th><th class="r">Engagement</th><th class="r">Key events</th></tr></thead><tbody>`+
+    CHAN.map(c=>{const sh=c[1]/tot*100, er=c[3]/c[1]*100;
+      return `<tr class="${c[0]===CHANNEL?'sel':''}"><td><span class="pill">${esc(c[0])}</span></td><td class="r num">${full(c[1])}</td>
+      <td><div class="sharebar"><i style="width:${sh.toFixed(1)}%"></i></div></td>
+      <td class="r num">${full(c[2])}</td><td class="r num">${er.toFixed(1)}%</td><td class="r num">${full(c[4])}</td></tr>`;}).join('')+`</tbody>`;
+  const top8=CHAN.slice(0,8);
+  mkChart('cChan',{type:'bar',data:{labels:top8.map(c=>c[0]),datasets:[
+    {label:'Sessions',data:top8.map(c=>c[1]),backgroundColor:top8.map(c=>c[0]===CHANNEL?'#D9A400':BLUE),borderRadius:6},
+    {label:'Key events',data:top8.map(c=>c[4]),backgroundColor:GOLD,borderRadius:6}
+  ]},options:{maintainAspectRatio:false,plugins:{legend:{position:'top',align:'end',labels:{boxWidth:10,usePointStyle:true}},
+    tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${fmt(c.parsed.y)}`}}},
+    scales:{y:{ticks:{callback:v=>fmt(v)}},x:{ticks:{maxRotation:45,minRotation:45}}}}});
+  const er8=top8.map(c=>c[3]/c[1]*100);
+  mkChart('cEng',{type:'bar',data:{labels:top8.map(c=>c[0]),datasets:[{data:er8,
+    backgroundColor:top8.map((c,i)=>c[0]===CHANNEL?GOLD:(er8[i]>=70?GREEN:er8[i]>=55?BLUE:SKY)),borderRadius:6}]},
+    options:{indexAxis:'y',maintainAspectRatio:false,plugins:{legend:{display:false},
+    tooltip:{callbacks:{label:c=>` ${c.parsed.x.toFixed(1)}% engaged`}}},
+    scales:{x:{max:100,ticks:{callback:v=>v+'%'}}}}});
+}
+
+/* ================= SEO ================= */
+function renderSeoKpisCharts(){
+  const gs=slice(GSC,RANGE), gsP=prev(GSC,RANGE), dts=slice(GSC_DATES,RANGE).map(dLabel);
+  const clicks=sum(gs,0), imps=sum(gs,1), ctr=clicks/imps*100, pos=gs.reduce((s,r)=>s+r[2],0)/gs.length;
+  const dCl=delta(clicks,gsP?sum(gsP,0):null), dIm=delta(imps,gsP?sum(gsP,1):null);
+  const dCtr=gsP?ctr-(sum(gsP,0)/sum(gsP,1)*100):null;
+  const dPos=gsP?pos-(gsP.reduce((s,r)=>s+r[2],0)/gsP.length):null;
+  $('#kpiSeo').innerHTML =
+    kpiCard('Clicks',fmt(clicks),chip(dCl)+' vs prev',true)+
+    kpiCard('Impressions',fmt(imps),chip(dIm)+' vs prev',true)+
+    kpiCard('Avg CTR',ctr.toFixed(2)+'%',(dCtr===null?'<span class="chip na">no prior window</span>':`<span class="chip ${dCtr>=0?'up':'dn'}">${dCtr>=0?'▲':'▼'} ${Math.abs(dCtr).toFixed(2)} pts</span>`),true)+
+    kpiCard('Avg position',pos.toFixed(1),(dPos===null?'<span class="chip na">no prior window</span>':`<span class="chip ${dPos<=0?'up':'dn'}">${dPos<=0?'▲ improved':'▼ slipped'} ${Math.abs(dPos).toFixed(1)}</span>`),true);
+
+  mkChart('cGsc',{type:'line',data:{labels:dts,datasets:[
+    {label:'Clicks',data:gs.map(r=>r[0]),borderColor:GOLD,backgroundColor:'rgba(245,183,0,.14)',fill:true,tension:.35,pointRadius:0,borderWidth:2.5,yAxisID:'y'},
+    {label:'Impressions',data:gs.map(r=>r[1]),borderColor:BLUE,tension:.35,pointRadius:0,borderWidth:2,borderDash:[5,4],yAxisID:'y1'}
+  ]},options:{maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+    plugins:{legend:{position:'top',align:'end',labels:{boxWidth:10,usePointStyle:true}},
+    tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${full(c.parsed.y)}`}}},
+    scales:{y:{position:'left',ticks:{callback:v=>fmt(v)}},y1:{position:'right',grid:{drawOnChartArea:false},ticks:{callback:v=>fmt(v)}},x:{ticks:{maxTicksLimit:10}}}}});
+
+  mkChart('cCtr',{type:'line',data:{labels:dts,datasets:[
+    {label:'CTR',data:gs.map(r=>+(r[0]/r[1]*100).toFixed(3)),borderColor:GREEN,backgroundColor:'rgba(15,163,107,.12)',fill:true,tension:.35,pointRadius:0,borderWidth:2.5}
+  ]},options:{maintainAspectRatio:false,plugins:{legend:{display:false},
+    tooltip:{callbacks:{label:c=>` CTR ${c.parsed.y.toFixed(2)}%`}}},
+    scales:{y:{ticks:{callback:v=>v.toFixed(1)+'%'}},x:{ticks:{maxTicksLimit:10}}}}});
+
+  mkChart('cPos',{type:'line',data:{labels:dts,datasets:[
+    {label:'Avg position',data:gs.map(r=>r[2]),borderColor:NAVY,backgroundColor:'rgba(11,31,75,.08)',fill:true,tension:.35,pointRadius:0,borderWidth:2.5}
+  ]},options:{maintainAspectRatio:false,plugins:{legend:{display:false},
+    tooltip:{callbacks:{label:c=>` Position ${c.parsed.y.toFixed(2)}`}}},
+    scales:{y:{reverse:true,ticks:{callback:v=>v.toFixed(1)}},x:{ticks:{maxTicksLimit:10}}}}});
+
+  mkChart('cGscDevice',{type:'doughnut',data:{labels:GSC_DEVICE.map(d=>d[0]),datasets:[{data:GSC_DEVICE.map(d=>d[1]),
+    backgroundColor:[GOLD,BLUE,NAVY],borderWidth:2,borderColor:'#fff'}]},
+    options:{maintainAspectRatio:false,cutout:'58%',plugins:{legend:{position:'right',labels:{boxWidth:12,usePointStyle:true}},
+    tooltip:{callbacks:{label:c=>{const d=GSC_DEVICE[c.dataIndex]; return ` ${d[0]}: ${full(d[1])} clicks · CTR ${d[3]}% · pos ${d[4]}`;}}}}}});
+}
+
+/* ---- filterable GSC tables ---- */
+function gscRow(q){
+  const ctr=q[1]/q[2]*100;
+  return `<tr><td class="qword" title="${esc(q[0])}">${esc(q[0])}</td><td class="r num">${full(q[1])}</td><td class="r num">${fmt(q[2])}</td><td class="r num">${ctr.toFixed(2)}%</td><td class="r num">${q[3].toFixed(1)}</td></tr>`;
+}
+function gscHead(col){ return `<thead><tr><th>${col}</th><th class="r">Clicks</th><th class="r">Impr.</th><th class="r">CTR</th><th class="r">Pos.</th></tr></thead>`; }
+function fsum(rows){
+  const cl=sum(rows,1), im=sum(rows,2);
+  const pos=cl>0 ? rows.reduce((s,r)=>s+r[3]*r[1],0)/cl : 0;
+  return {cl,im,ctr:im>0?cl/im*100:0,pos};
+}
+function renderFilterTable(data, filterVal, tableId, sumId, colName, unitLabel){
+  const f=(filterVal||'').trim().toLowerCase();
+  const rows=f? data.filter(r=>r[0].toLowerCase().includes(f)) : data;
+  const t=$('#'+tableId), s=$('#'+sumId);
+  if(rows.length===0){
+    t.innerHTML=gscHead(colName)+`<tbody><tr><td colspan="5"><div class="empty">No ${unitLabel} containing “${esc(filterVal)}” in the loaded top rows.</div></td></tr></tbody>`;
+    s.classList.remove('on'); return;
+  }
+  t.innerHTML=gscHead(colName)+'<tbody>'+rows.map(gscRow).join('')+'</tbody>';
+  if(f){
+    const a=fsum(rows);
+    s.innerHTML=`<b>${rows.length}</b> ${unitLabel} containing “${esc(filterVal)}” → <b>${full(a.cl)}</b> clicks · <b>${fmt(a.im)}</b> impressions · CTR <b>${a.ctr.toFixed(2)}%</b> · avg position <b>${a.pos.toFixed(1)}</b> (clicks-weighted)`;
+    s.classList.add('on');
+  } else s.classList.remove('on');
+}
+
+/* ---- filterable GA pages table ---- */
+function renderPages(filterVal){
+  const f=(filterVal||'').trim().toLowerCase();
+  const rows=f? PAGES.filter(p=>p[0].toLowerCase().includes(f)) : PAGES;
+  const t=$('#tPages'), s=$('#pgSum');
+  const head=`<thead><tr><th>Page path</th><th class="r">Page views</th><th></th><th class="r">Sessions</th><th class="r">Users</th><th class="r">Views / session</th></tr></thead>`;
+  if(rows.length===0){
+    t.innerHTML=head+`<tbody><tr><td colspan="6"><div class="empty">No pages containing “${esc(filterVal)}” in the loaded top rows.</div></td></tr></tbody>`;
+    s.classList.remove('on'); return;
+  }
+  const mx=Math.max(...rows.map(r=>r[1]));
+  t.innerHTML=head+'<tbody>'+rows.map(p=>`<tr><td class="qword" title="${esc(p[0])}"><span class="pill">${esc(p[0])}</span></td>
+      <td class="r num">${full(p[1])}</td>
+      <td><div class="sharebar"><i style="width:${(p[1]/mx*100).toFixed(1)}%"></i></div></td>
+      <td class="r num">${full(p[2])}</td><td class="r num">${full(p[3])}</td>
+      <td class="r num">${(p[1]/p[2]).toFixed(1)}</td></tr>`).join('')+'</tbody>';
+  if(f){
+    const v=sum(rows,1), se=sum(rows,2), us=sum(rows,3);
+    s.innerHTML=`<b>${rows.length}</b> pages containing “${esc(filterVal)}” → <b>${full(v)}</b> page views · <b>${full(se)}</b> sessions · <b>${full(us)}</b> users`;
+    s.classList.add('on');
+  } else s.classList.remove('on');
+}
+
+/* ================= Site Health & Authority ================= */
+function renderHealth(){
+  $('#kpiHealth').innerHTML =
+    kpiCard('Domain Rating',AHREFS.domainRating,'Ahrefs · out of 100',true)+
+    kpiCard('Ahrefs Rank',full(AHREFS.ahrefsRank),'global site rank',true)+
+    kpiCard('Live backlinks',fmt(AHREFS.liveBacklinks),'currently pointing to the domain')+
+    kpiCard('Live referring domains',fmt(AHREFS.liveRefDomains),'unique linking root domains')+
+    kpiCard('All-time backlinks',fmt(AHREFS.allTimeBacklinks),'cumulative, incl. lost links')+
+    kpiCard('All-time ref. domains',fmt(AHREFS.allTimeRefDomains),'cumulative unique domains');
+
+  const mob = PSI.filter(p=>p[1]==='mobile');
+  $('#tPsiMobile').innerHTML = `<thead><tr><th>Page</th><th class="r">LCP</th><th class="r">CLS</th><th class="r">FCP</th><th class="r">TBT</th></tr></thead><tbody>`+
+    mob.map(p=>`<tr><td><span class="pill">${esc(p[0])}</span></td><td class="r num">${p[6]}</td><td class="r num">${p[7]}</td><td class="r num">${p[8]}</td><td class="r num">${p[10]}</td></tr>`).join('')+`</tbody>`;
+
+  mkChart('cPsiScores',{type:'bar',data:{labels:mob.map(p=>p[0]),datasets:[
+    {label:'Performance',data:mob.map(p=>p[2]),backgroundColor:BLUE,borderRadius:5},
+    {label:'Accessibility',data:mob.map(p=>p[3]),backgroundColor:GOLD,borderRadius:5},
+    {label:'Best Practices',data:mob.map(p=>p[4]),backgroundColor:GREEN,borderRadius:5},
+    {label:'SEO',data:mob.map(p=>p[5]),backgroundColor:NAVY,borderRadius:5}
+  ]},options:{maintainAspectRatio:false,plugins:{legend:{position:'top',align:'end',labels:{boxWidth:10,usePointStyle:true}},
+    tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${c.parsed.y}/100`}}},
+    scales:{y:{max:100,ticks:{stepSize:20}},x:{ticks:{maxRotation:30,minRotation:0}}}}});
+
+  const home = PSI.filter(p=>p[0]==='Homepage');
+  $('#tPsiHome').innerHTML = `<thead><tr><th>Strategy</th><th class="r">Performance</th><th class="r">Accessibility</th><th class="r">Best Practices</th><th class="r">SEO</th><th class="r">LCP</th><th class="r">CLS</th><th class="r">Speed Index</th></tr></thead><tbody>`+
+    home.map(p=>`<tr><td><span class="pill">${esc(p[1])}</span></td><td class="r num">${p[2]}</td><td class="r num">${p[3]}</td><td class="r num">${p[4]}</td><td class="r num">${p[5]}</td><td class="r num">${p[6]}</td><td class="r num">${p[7]}</td><td class="r num">${p[9]}</td></tr>`).join('')+`</tbody>`;
+
+  $('#tAhrefs').innerHTML = `<thead><tr><th>Metric</th><th class="r">Value</th></tr></thead><tbody>
+    <tr><td>Domain Rating (DR)</td><td class="r num">${AHREFS.domainRating} / 100</td></tr>
+    <tr><td>Ahrefs Rank (global)</td><td class="r num">${full(AHREFS.ahrefsRank)}</td></tr>
+    <tr><td>Live backlinks</td><td class="r num">${full(AHREFS.liveBacklinks)}</td></tr>
+    <tr><td>Live referring domains</td><td class="r num">${full(AHREFS.liveRefDomains)}</td></tr>
+    <tr><td>All-time backlinks</td><td class="r num">${full(AHREFS.allTimeBacklinks)}</td></tr>
+    <tr><td>All-time referring domains</td><td class="r num">${full(AHREFS.allTimeRefDomains)}</td></tr>
+  </tbody>`;
+}
+
+function renderAll(){
+  renderKpis(); renderTraffic(); renderDeviceChan(); renderInsights(); renderAcq(); renderSeoKpisCharts(); renderHealth();
+  renderFilterTable(QUERIES, $('#qFilter').value, 'tQueries', 'qSum', 'Query', 'queries');
+  renderFilterTable(GSCPAGES, $('#gpFilter').value, 'tGscPages', 'gpSum', 'Page', 'pages');
+  renderFilterTable(GSCPAGES, $('#gp2Filter').value, 'tGscPages2', 'gp2Sum', 'Page', 'pages');
+  renderPages($('#pgFilter').value);
+}
+
+/* ================= interactions ================= */
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
+  document.querySelectorAll('.view').forEach(x=>x.classList.remove('on'));
+  t.classList.add('on'); $('#v-'+t.dataset.view).classList.add('on');
+}));
+document.querySelectorAll('.rng[data-d]').forEach(r=>r.addEventListener('click',()=>{
+  document.querySelectorAll('.rng').forEach(x=>x.classList.remove('on'));
+  r.classList.add('on'); RANGE=+r.dataset.d; renderAll();
+}));
+$('#chanSel').addEventListener('change',e=>{ CHANNEL=e.target.value; renderKpis(); renderDeviceChan(); renderAcq(); });
+$('#qFilter').addEventListener('input',e=>renderFilterTable(QUERIES,e.target.value,'tQueries','qSum','Query','queries'));
+$('#gpFilter').addEventListener('input',e=>renderFilterTable(GSCPAGES,e.target.value,'tGscPages','gpSum','Page','pages'));
+$('#gp2Filter').addEventListener('input',e=>renderFilterTable(GSCPAGES,e.target.value,'tGscPages2','gp2Sum','Page','pages'));
+$('#pgFilter').addEventListener('input',e=>renderPages(e.target.value));
+
+renderAll();
+</script>
+</body>
+</html>
