@@ -96,6 +96,51 @@
   .in b{color:var(--navy)}
   .note{font-size:11.5px;color:var(--muted);margin-top:10px;line-height:1.5}
 
+  /* ---- SEO audit specific ---- */
+  .gaugewrap{display:flex;align-items:center;gap:22px;flex-wrap:wrap}
+  .gauge{position:relative;width:150px;height:150px;flex:none}
+  .gauge .num{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .gauge .num .big{font-size:32px;font-weight:800;color:var(--navy);line-height:1}
+  .gauge .num .small{font-size:11px;color:var(--muted);margin-top:2px}
+  .modbars{flex:1;min-width:260px;display:grid;gap:8px}
+  .modbar-row{display:grid;grid-template-columns:120px 1fr 46px;align-items:center;gap:10px;font-size:12.5px}
+  .modbar-track{height:9px;border-radius:99px;background:#EDF1F8;overflow:hidden}
+  .modbar-fill{height:100%;border-radius:99px}
+  .score-good{background:var(--green)} .score-mid{background:var(--gold)} .score-bad{background:var(--red)}
+
+  .checklist{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px}
+  .cl-item{display:flex;align-items:center;gap:9px;background:#FBFCFE;border:1px solid var(--line);border-radius:10px;padding:9px 12px;font-size:12.5px}
+  .cl-dot{width:9px;height:9px;border-radius:50%;flex:none}
+  .cl-dot.yes{background:var(--green)} .cl-dot.no{background:var(--red)}
+
+  .issuecards{display:grid;gap:10px}
+  .issuecard{display:grid;grid-template-columns:90px 1fr;gap:12px;background:#FBFCFE;border:1px solid var(--line);border-left:4px solid var(--gold);border-radius:10px;padding:11px 14px;font-size:13px}
+  .issuecard.high{border-left-color:var(--red)}
+  .issuecard.low{border-left-color:var(--blue)}
+  .prio{font:700 10.5px 'Inter';letter-spacing:.5px;text-transform:uppercase;padding:3px 8px;border-radius:99px;height:fit-content;text-align:center;background:#FFF3D6;color:#8A6300}
+  .prio.high{background:#FCE3E1;color:#B23127}
+  .prio.low{background:var(--sky);color:var(--blue-dark)}
+  .issuecard b{color:var(--navy)}
+  .issuecard .rec{color:var(--muted);font-size:12px;margin-top:3px}
+
+  .ba{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:800px){.ba{grid-template-columns:1fr}}
+  .ba-box{background:#FBFCFE;border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+  .ba-box.after{border-color:#BEE6D2;background:#F3FBF7}
+  .ba-label{font:700 10.5px 'Inter';letter-spacing:.6px;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+  .ba-box.after .ba-label{color:var(--green)}
+  .ba-text{font-size:13px;line-height:1.5;color:var(--ink)}
+
+  .tagrow{display:flex;flex-wrap:wrap;gap:7px}
+  .tagx{font:600 12px 'Inter';padding:5px 12px;border-radius:99px;background:var(--sky);color:var(--blue-dark)}
+  .tagx.miss{background:#FCE3E1;color:#B23127}
+  .tagx.found{background:#E4F6EE;color:var(--green)}
+
+  .upliftbar{display:flex;align-items:center;gap:14px;margin-top:6px}
+  .upliftbar .track{flex:1;height:22px;border-radius:99px;background:#EDF1F8;position:relative;overflow:hidden}
+  .upliftbar .fill{position:absolute;left:0;top:0;bottom:0;border-radius:99px;background:linear-gradient(90deg,var(--blue),var(--green))}
+  .upliftbar .marker{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--navy)}
+
   footer{max-width:1240px;margin:0 auto;padding:0 28px 30px;font-size:11.5px;color:var(--muted);line-height:1.6}
   @media print{
     header{-webkit-print-color-adjust:exact;print-color-adjust:exact}
@@ -126,6 +171,7 @@
       <button class="tab" data-view="seo">Organic Search</button>
       <button class="tab" data-view="pages">Top Pages</button>
       <button class="tab" data-view="health">Site Health &amp; Authority</button>
+      <button class="tab" data-view="audit">SEO Audit</button>
     </nav>
     <div class="controls">
       <div class="chansel">
@@ -319,10 +365,88 @@
     </div>
   </section>
 
+  <!-- ================= SEO AUDIT ================= -->
+  <section class="view" id="v-audit">
+    <div class="scope" style="margin-bottom:14px">Audited page: <b>&nbsp;/health-insurance/health-insurance-india/</b>&nbsp;· target keyword “health insurance” · source: SEO Audit MCP</div>
+
+    <div class="panel">
+      <h3>Overall SEO score</h3>
+      <p class="cap">Composite score across 8 categories, out of 100</p>
+      <div class="gaugewrap">
+        <div class="gauge"><canvas id="cGauge"></canvas>
+          <div class="num"><div class="big num" id="gaugeNum">–</div><div class="small">out of 100</div></div>
+        </div>
+        <div class="modbars" id="catBars"></div>
+      </div>
+    </div>
+
+    <div class="grid g2e">
+      <div class="panel">
+        <h3>Module-by-module scores</h3>
+        <p class="cap">Every audited module, actual vs maximum possible</p>
+        <div class="ch"><canvas id="cModules"></canvas></div>
+      </div>
+      <div class="panel">
+        <h3>Technical SEO checklist</h3>
+        <p class="cap">Pass / fail signals detected on the page</p>
+        <div class="checklist" id="techChecklist"></div>
+      </div>
+    </div>
+
+    <div class="grid g2e">
+      <div class="panel">
+        <h3>Content profile</h3>
+        <p class="cap">Depth and structure signals</p>
+        <div class="kpis" id="contentKpis" style="margin-bottom:0"></div>
+      </div>
+      <div class="panel">
+        <h3>Optimizer: score uplift if fixes are applied</h3>
+        <p class="cap">Current vs predicted score after applying auto-fixes below</p>
+        <div class="upliftbar">
+          <div class="track"><div class="fill" id="upliftFill"></div><div class="marker" id="upliftMarker"></div></div>
+          <div style="font-size:13px;white-space:nowrap"><b class="num" id="upliftText">–</b></div>
+        </div>
+        <p class="note" id="upliftNote"></p>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>Issues &amp; recommendations</h3>
+      <p class="cap">Every flagged issue, prioritized</p>
+      <div class="issuecards" id="issueCards"></div>
+    </div>
+
+    <div class="panel">
+      <h3>Auto-fix suggestions — title, meta description &amp; H1</h3>
+      <p class="cap">Current vs recommended, ready to hand to content/dev</p>
+      <div class="grid" id="autoFixes"></div>
+    </div>
+
+    <div class="grid g2e">
+      <div class="panel">
+        <h3>Topic &amp; entity coverage</h3>
+        <p class="cap">What the page already covers vs what's missing</p>
+        <div id="topicCoverage"></div>
+      </div>
+      <div class="panel">
+        <h3>Recommended schema markup</h3>
+        <p class="cap">Structured data to add for richer SERP presentation</p>
+        <div id="schemaRecs"></div>
+        <p class="note">Detected schema on page: Product, BreadcrumbList. Recommended additions below would round out eligibility for FAQ rich results and stronger brand-entity presentation.</p>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>Suggested internal links</h3>
+      <p class="cap">To strengthen topical authority and transactional intent from this page</p>
+      <table id="tLinkSuggest"></table>
+    </div>
+  </section>
+
 </main>
 
 <footer>
-  Sources: Google Analytics 4 (property “PolicyBazaar – Ga4”, IST timezone, default channel group), Google Search Console (www.policybazaar.com), Ahrefs (domain-level authority and backlinks for policybazaar.com), and Google PageSpeed Insights (Lighthouse scores and Core Web Vitals for five key pages, mobile + desktop). Daily series cover 16 Apr – 14 Jul 2026 (GA4) and 16 Apr – 13 Jul 2026 (GSC). Query/page tables cover the listed rows pulled from each API; “contains” filters aggregate across the loaded rows (position is clicks-weighted). Change chips compare the selected window with the preceding window of equal length where history allows. Semrush could not be included in this refresh — see the note in Site Health &amp; Authority. To refresh: ask Claude to “update the PolicyBazaar dashboard with the latest data”.
+  Sources: Google Analytics 4 (property “PolicyBazaar – Ga4”, IST timezone, default channel group), Google Search Console (www.policybazaar.com), Ahrefs (domain-level authority and backlinks for policybazaar.com), Google PageSpeed Insights (Lighthouse scores and Core Web Vitals for five key pages, mobile + desktop), and the SEO Audit MCP (full on-page/technical/content/E-E-A-T/AI-readiness audit of /health-insurance/health-insurance-india/ for the keyword “health insurance”). Daily series cover 16 Apr – 14 Jul 2026 (GA4) and 16 Apr – 13 Jul 2026 (GSC). Query/page tables cover the listed rows pulled from each API; “contains” filters aggregate across the loaded rows (position is clicks-weighted). Change chips compare the selected window with the preceding window of equal length where history allows. Semrush could not be included in this refresh — see the note in Site Health &amp; Authority. To refresh or audit another page: ask Claude to “update the PolicyBazaar dashboard” or “audit &lt;url&gt; for &lt;keyword&gt;”.
 </footer>
 
 <script>
@@ -423,6 +547,54 @@ const GSCPAGES = [
 ["/rto/vehicle-owner-details/kerala/",26501,304807,4.9],["/rto/challan-status/kerala/",26238,1376495,5.9],
 ["/rto/vehicle-owner-details/tamil-nadu/",26187,242370,5.1]
 ];
+
+// SEO Audit MCP result: /health-insurance/health-insurance-india/ · keyword "health insurance"
+const AUDIT = {
+  overall:{total:71,max:100,breakdown:{onPage:16,content:12,technical:15,eeat:7,ai:12,entity:5,serp:0,ux:4}},
+  breakdownMax:{onPage:20,content:15,technical:15,eeat:15,ai:15,entity:10,serp:10,ux:5},
+  modules:[
+    ["Industry Detection",10,10],["Topic Coverage",5,10],["Title",10,10],["Meta Description",7,10],
+    ["H1",4,5],["Heading Structure",10,10],["Content Quality",9,15],["Content Intelligence",15,15],
+    ["Keyword Optimization",6,10],["Internal Links",5,5],["Images",2,5],["Technical SEO",15,15],
+    ["E-E-A-T",7,15],["AI Readiness",12,15],["Entity Coverage",10,10],["Search Intent",0,10]
+  ],
+  technical:{canonical:true,https:false,favicon:false,viewport:true,openGraph:true,twitterCard:true,
+    hreflangCount:6,schemaTypes:["BreadcrumbList","Product"]},
+  content:{wordCount:26198,readingTimeMin:117,paragraphs:283,lists:69,tables:4,images:187,
+    internalLinks:492,externalLinks:51,missingAlt:14,contentDepth:"Exceptional"},
+  optimizer:{current:71,predicted:83,improvement:12},
+  issues:[
+    ["Topic Coverage","4 important topics missing.","Add missing topical sections.","medium"],
+    ["Meta Description","Meta description length is 198 characters.","Keep meta description length between 140–160 characters.","medium"],
+    ["H1","H1 length should ideally be between 20–70 characters.","Shorten or restructure the H1.","medium"],
+    ["Content Quality","Some paragraphs are too long.","Break long paragraphs into smaller sections.","medium"],
+    ["Keyword Optimization","Possible keyword over-optimization (609 occurrences).","Reduce repetitive keyword usage.","high"],
+    ["Keyword Optimization","Keyword missing from opening paragraph.","Mention the keyword early in the content.","medium"],
+    ["Images","14 images missing ALT attributes.","Add descriptive ALT text to all images.","medium"],
+    ["Technical SEO","Favicon missing.","Add a favicon to the site.","low"],
+    ["E-E-A-T","Author information is missing.","Add an author name and profile.","high"],
+    ["E-E-A-T","Reviewer information is missing.","Display reviewer or expert verification.","high"],
+    ["E-E-A-T","Last updated date missing.","Display a visible last-updated date.","medium"],
+    ["AI Readiness","No strong introductory summary.","Start the page with a concise answer to the user's query.","medium"],
+    ["Search Intent","No intent model available.","Not applicable / informational gap in the tool.","low"]
+  ],
+  autoFixes:{
+    title:{current:"Health Insurance: Buy Medical Insurance Plans @₹10/day*", best:"health insurance: Compare, Buy & Renew Online"},
+    meta:{current:"(198 characters — over the recommended range)", best:"health insurance online. Compare plans, features, premiums, benefits and buy instantly. Get expert guidance, quick quotes and hassle-free renewal."},
+    h1:{current:"(too short — outside 20–70 char range)", best:"Complete Guide to Health Insurance"}
+  },
+  topicsFound:["What is health insurance","Benefits of health insurance","Types of health insurance","Health insurance coverage"],
+  topicsMissing:["Health insurance premium calculation","Health insurance claim process","Health insurance documents required","Health insurance FAQs"],
+  entitiesFound:["premium","coverage","claim settlement","policy","insurer","renewal","benefits","eligibility","documents"],
+  schemasRecommended:["FAQPage","BreadcrumbList","Organization"],
+  linkSuggestions:[
+    ["health insurance calculator","/health-insurance/calculator/","Improve transactional intent"],
+    ["health insurance renewal","/health-insurance/renewal/","Support existing customers"],
+    ["health insurance claim process","/health-insurance/claim-process/","Improve topical authority"],
+    ["health insurance FAQs","/health-insurance/faqs/","Strengthen AI visibility"],
+    ["Compare health insurance","/health-insurance/compare/","Improve commercial intent"]
+  ]
+};
 
 /* ================= helpers ================= */
 const $ = s => document.querySelector(s);
@@ -700,8 +872,81 @@ function renderHealth(){
   </tbody>`;
 }
 
+/* ================= SEO Audit ================= */
+function scoreClass(pct){ return pct>=80?'score-good':pct>=50?'score-mid':'score-bad'; }
+function renderAudit(){
+  const o=AUDIT.overall;
+  $('#gaugeNum').textContent = o.total;
+  mkChart('cGauge',{type:'doughnut',data:{datasets:[{data:[o.total,o.max-o.total],
+    backgroundColor:[o.total>=80?GREEN:o.total>=50?GOLD:'#E2504C','#EDF1F8'],borderWidth:0}]},
+    options:{maintainAspectRatio:false,cutout:'78%',rotation:-90,circumference:360,
+    plugins:{legend:{display:false},tooltip:{enabled:false}}}});
+
+  const catLabels={onPage:'On-page',content:'Content',technical:'Technical',eeat:'E-E-A-T',ai:'AI Readiness',entity:'Entity',serp:'SERP',ux:'UX'};
+  $('#catBars').innerHTML = Object.keys(o.breakdown).map(k=>{
+    const v=o.breakdown[k], mx=AUDIT.breakdownMax[k], pct=v/mx*100;
+    return `<div class="modbar-row"><span>${catLabels[k]}</span><div class="modbar-track"><div class="modbar-fill ${scoreClass(pct)}" style="width:${pct}%"></div></div><span class="num r">${v}/${mx}</span></div>`;
+  }).join('');
+
+  mkChart('cModules',{type:'bar',data:{labels:AUDIT.modules.map(m=>m[0]),datasets:[
+    {label:'Score',data:AUDIT.modules.map(m=>m[1]),backgroundColor:AUDIT.modules.map(m=>{const p=m[1]/m[2]*100; return p>=80?GREEN:p>=50?GOLD:'#E2504C';}),borderRadius:5},
+    {label:'Max possible',data:AUDIT.modules.map(m=>m[2]),backgroundColor:'#EDF1F8',borderRadius:5}
+  ]},options:{indexAxis:'y',maintainAspectRatio:false,plugins:{legend:{position:'top',align:'end',labels:{boxWidth:10,usePointStyle:true}},
+    tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${c.parsed.x}`}}},
+    scales:{x:{max:16},y:{ticks:{font:{size:11}}}}}});
+
+  const t=AUDIT.technical;
+  const items=[
+    ['Canonical tag',t.canonical],['HTTPS',t.https],['Favicon',t.favicon],['Viewport meta',t.viewport],
+    ['Open Graph tags',t.openGraph],['Twitter Card',t.twitterCard],[`Hreflang (${t.hreflangCount})`,t.hreflangCount>0],
+    ['Schema: '+t.schemaTypes.join(', '),t.schemaTypes.length>0]
+  ];
+  $('#techChecklist').innerHTML = items.map(i=>`<div class="cl-item"><span class="cl-dot ${i[1]?'yes':'no'}"></span>${esc(i[0])}</div>`).join('');
+
+  const c=AUDIT.content;
+  $('#contentKpis').innerHTML =
+    kpiCard('Word count',full(c.wordCount),c.contentDepth+' depth',true)+
+    kpiCard('Reading time',c.readingTimeMin+' min','at avg. reading speed')+
+    kpiCard('Paragraphs',c.paragraphs,'structure')+
+    kpiCard('Images',c.images,c.missingAlt+' missing ALT text')+
+    kpiCard('Internal links',full(c.internalLinks),'strong linking')+
+    kpiCard('Lists / tables',c.lists+' / '+c.tables,'scannable structure');
+
+  const op=AUDIT.optimizer, pct=op.current, pred=op.predicted;
+  $('#upliftFill').style.width = pred+'%';
+  $('#upliftMarker').style.left = pct+'%';
+  $('#upliftText').innerHTML = `${op.current} → ${op.predicted} <span class="chip up">+${op.improvement} pts</span>`;
+  $('#upliftNote').textContent = `Applying the auto-fixes below (title, meta description, H1, plus the flagged content and technical issues) is projected to lift the score from ${op.current} to ${op.predicted} out of 100.`;
+
+  $('#issueCards').innerHTML = AUDIT.issues.map(i=>{
+    const [mod,issue,rec,prio]=i;
+    return `<div class="issuecard ${prio}"><span class="prio ${prio}">${prio}</span><div><b>${esc(mod)}:</b> ${esc(issue)}${rec?`<div class="rec">→ ${esc(rec)}</div>`:''}</div></div>`;
+  }).join('');
+
+  const af=AUDIT.autoFixes;
+  $('#autoFixes').innerHTML = `
+    <div class="ba"><div class="ba-box"><div class="ba-label">Current title</div><div class="ba-text">${esc(af.title.current)}</div></div>
+    <div class="ba-box after"><div class="ba-label">Suggested title</div><div class="ba-text">${esc(af.title.best)}</div></div></div>
+    <div class="ba" style="margin-top:10px"><div class="ba-box"><div class="ba-label">Current meta description</div><div class="ba-text">${esc(af.meta.current)}</div></div>
+    <div class="ba-box after"><div class="ba-label">Suggested meta description</div><div class="ba-text">${esc(af.meta.best)}</div></div></div>
+    <div class="ba" style="margin-top:10px"><div class="ba-box"><div class="ba-label">Current H1</div><div class="ba-text">${esc(af.h1.current)}</div></div>
+    <div class="ba-box after"><div class="ba-label">Suggested H1</div><div class="ba-text">${esc(af.h1.best)}</div></div></div>`;
+
+  $('#topicCoverage').innerHTML = `<p class="cap" style="margin-top:0">Covered</p><div class="tagrow">`+
+    AUDIT.topicsFound.map(t=>`<span class="tagx found">✓ ${esc(t)}</span>`).join('')+`</div>
+    <p class="cap" style="margin-top:14px">Missing</p><div class="tagrow">`+
+    AUDIT.topicsMissing.map(t=>`<span class="tagx miss">+ ${esc(t)}</span>`).join('')+`</div>
+    <p class="cap" style="margin-top:14px">Entities detected (100% coverage)</p><div class="tagrow">`+
+    AUDIT.entitiesFound.map(t=>`<span class="tagx">${esc(t)}</span>`).join('')+`</div>`;
+
+  $('#schemaRecs').innerHTML = `<div class="tagrow">`+AUDIT.schemasRecommended.map(s=>`<span class="tagx miss">+ ${esc(s)}</span>`).join('')+`</div>`;
+
+  $('#tLinkSuggest').innerHTML = `<thead><tr><th>Anchor text</th><th>Target URL</th><th>Why</th></tr></thead><tbody>`+
+    AUDIT.linkSuggestions.map(l=>`<tr><td><span class="pill">${esc(l[0])}</span></td><td class="qword">${esc(l[1])}</td><td>${esc(l[2])}</td></tr>`).join('')+`</tbody>`;
+}
+
 function renderAll(){
-  renderKpis(); renderTraffic(); renderDeviceChan(); renderInsights(); renderAcq(); renderSeoKpisCharts(); renderHealth();
+  renderKpis(); renderTraffic(); renderDeviceChan(); renderInsights(); renderAcq(); renderSeoKpisCharts(); renderHealth(); renderAudit();
   renderFilterTable(QUERIES, $('#qFilter').value, 'tQueries', 'qSum', 'Query', 'queries');
   renderFilterTable(GSCPAGES, $('#gpFilter').value, 'tGscPages', 'gpSum', 'Page', 'pages');
   renderFilterTable(GSCPAGES, $('#gp2Filter').value, 'tGscPages2', 'gp2Sum', 'Page', 'pages');
